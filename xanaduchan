@@ -1,0 +1,196 @@
+UTC20151025-26
+
+Gentlemen,
+
+Alex and I discussed XanaduChan, whose fundamental model of
+organization would be the ZZ structure, for a few paragraphs more
+before he left this morning. Upon further contemplation of navigation
+within such a site, I internalized a curious property of ZZ structures
+which I believe drives both their flexibility and difficulty of use:
+ZZ structures can be represented as persistent, immutable, append-only
+data structures, yet the notion of ordering within them is not
+monotonic. That is, the difference between two paths walked along a ZZ
+struct with n and n+1 cells may differ by more than their endpoints.
+
+To illustrate, recall that a ZZ struct is the generalization of a two
+dimensional lattice, with the execption that cell neighbor connections
+are not set by default; each cell initially exists atomically.
+
+Compare a 4x4 2-D lattice:
+
+A0 - A1 - A2 - A3
+ |   |    |    |
+B0 - B1 - B2 - B3
+|    |    |    |
+C0 - C1 - C2 - C3
+|    |    |    |
+D0 - D1 - D2 - D3
+
+and a 4x4 2-D zzstruct:
+
+A0  A1  A2  A3
+
+B0  B1  B2  B3
+
+C0  C1  C2  C3
+
+D0  D1  D2  D3
+
+Although two cells may only have one connection along any one
+dimension, they may have connections along arbitrarily many
+dimensions. Many connections along multiple unique dimensions are
+equivalent to a single "strongly wieghted" connection along a single
+axis, or multiple same dimension connections distinguished by labels.
+
+A - B     One connection, one dimension.
+
+  ---
+A --- B   Three dimensions with one connection per.
+  ---
+
+A = B     One "strongly weighted" connection along a single dimension,
+          able to carry multiple signals simultaneously that were
+          previously split along multiple dimensional axis.
+
+  [--0--]
+A [--1--] B    Three labelled connections along the same
+  [--2--]      dimension.
+
+The "2-D" zzstruct above is misleadingly labelled however, because
+dimensionality in a zzstruct is dynamic, defined bottom up by the
+existence of edges connecting cells as neighbors. Thus, the diagram
+above is actually a 16 element zero dimensional zzstruct, where every
+cell exists at the same zero dimensional point, because none are the
+neighbors of any other. Access to one cell does not grant access to
+any other, and information cannot be gained about any more than the
+cell currently in focus. Navigation, and the knowledge that other
+locations exists towards which to navigate, cannot occur without an
+auxiliary extra-systemic, "top-down" faculty. To reassert the
+generalization, a zzstruct is a potentially multi-dimensional lattice
+(hence "hyperorthogonal data structure") born as a single point.
+
+A line is defined as the extension connecting two points; a point is
+defined as the intersection of two lines. These definitions are the
+duals of the other, and similarly a zzstruct is defined dual to a
+hyperlattice: every point in lattice is defined by its co-ordinates
+(the intersection of axes), and a new point can be defined wherever an
+intersection of axes exists; every axis in a zzstruct is defined by
+its endpoints (the cells which connect as neighbors), and a new
+dimension can be defined whenever a cell gains a new neighbor.
+
+An n-dimensional zzstruct can be compactly represented as an
+association list, where each element is an indexed cell associated
+with an n-length list of its neighbors along every dimension. When a
+new cell is added, its label is inserted into the appropriate index in
+the neighbor list for each cell to which it is connected. When a new
+dimension of connection is created between two cells, every other cell
+extends their neighbor list by one empty element. The generalized form
+of a zzstruct's cell-indexed neighbor lists is thus a sparse three
+dimensional matrix (because each cell has a positive and negative
+neighbor along every axis).
+
+zzstruct = {
+(c0 . ((c1 c2) 0 0 0))              ;;c1 is the positive connection, 
+(c1 . ((c3 c0) 0 0 (c3 0)))         ;;c2 the negative, 0 represents 
+(c2 . ((c0 c3) (c0 c1) (c1 c3) 0))  ;;no connection
+(c3 . ((c2 c1) 0 0 (0 c1)))         ;;note the cycle formed by 
+}                                   ;;c0 -> c1 -> c3 -> c2 -> c0 
+                                    ;;in the positive, and 
+                                    ;;c0 -> c2 -> c3 -> c1 -> c0
+                                    ;;in the negative
+
+An element (c4 . (c0 c2) 0 0 0) can not be added to the zzstruct,
+because c0 already has a negative neighbor along axis one, and c2 an
+axis-1 positive neighbor. Thus, a choice must be made of how to
+connect c4 with c0 and c2, the simplest being to create a new
+dimensional axis, a-5:
+
+zzstruct = {
+(c0 . ((c1 c2) 0 0 0 (0 c4)))
+(c1 . ((c3 c0) 0 0 (c3 0) 0))
+(c2 . ((c0 c3) (c0 c1) (c1 c3) 0 (c4 0)))
+(c3 . ((c2 c1) 0 0 (0 c1) 0))
+(c4 . ((0 0 0 0 (c0 c2)))
+}
+
+The resulting zzstruct is sparser than before [0], but was only
+extended and rebuilt, not mutated in place, and could repurpose much
+of its previous form when mapped to memory through judicious pointer
+splicing. In general, all the principles of functional persistent data
+structures as they pertain to dynamic arrays can be applied to
+zzstructs; adding new connections between existing cells, and deleting
+cells, are simpler tasks than the insertion case demonstrated above.
+In abstract, a zzstruct organized chan would be a web page with each
+comment a cell, with the backbone axis the list of chronologically
+ordered top-level posts (where a "post" is simply a comment along
+axis-0). The page would begin life as a single cell, gradually
+expanding as posts comments accrued. The default mechanism for growth
+would be the "reply" feature, adding a neighbor to an axis-0 cell
+along axis-1 (stacks, not trees, define relation of child responses to
+the original), but greater intricacy would result from the practice of
+linking between comments and posts. Again, these connetions would have
+a default insertion algorithm, but if every cell were queryable for
+its current local neighbor network, a new cell could choose to connect
+along a new, or unused, dimension. Such deviations would allow for the
+ad-hoc creation of "axes of interest"; just as opening a comment
+thread merely changes the view on the global zzstruct from "axis-0, in
+the direction away (forward in time) from cell 0 (the genesis cell,
+aka front page)" to "axis-1, away from cell OP (the local genesis cell
+neighboring cell 0 along axis-0)", one could select one's view to
+begin from a arbitrary cell, projected along an arbitrary neighboring
+axis. Navigating the 2-D projection of a mature zzstruct would be akin
+to exploring a complex dungeon-crawler, with strange material, related
+only by user preference expressed via hyperlink, appearing at odd
+intervals.
+
+Outside of the official (outdated) implementation [1], ZZ structures
+have a few easily searchable open source incarnations: in Ruby [2],
+[3], C++ (maybe) [4], and possibly even within a PHP bulletin board
+program [5], though documentation is sparse for everything outside
+boris-s. A clean, performant, easily callable zzstruct library would
+be interesting as an exercise, demonstrative as a example of Ix
+Technology's web prowess, and contributive to the revitalization of
+Ted Nelson's ideas in the broader community. The ZZ structure academic
+paper [6] offers many avenues for applications, whose development,
+plus a mathematical explication refuting zzstruct's formal
+indescribability, would be worth a paper in and of itself.
+
+My curiosity is sufficiently piqued that I shall pursue this line of
+investigation independently regardless, but your comments, and fellow
+travels, would be greatly appreciated.
+
+Sincerely,
+jpt4
+
+[0] Note that an alternative strategy for inserting c4 could have
+found the first "open" axis between c0 and c2 that could have
+accommodated c4, in this case a-4, yielding:
+
+zzstruct = {
+(c0 . ((c1 c2) 0 0 (0 c4)))
+(c1 . ((c3 c0) 0 0 (c3 0)))
+(c2 . ((c0 c3) (c0 c1) (c1 c3) (c4 0)))
+(c3 . ((c2 c1) 0 0 (0 c1)))
+(c4 . ((0 0 0 (c0 c2)))
+}
+
+It is a separate question how, and whether, new cells should be
+compactly added to an existing zzstructure.
+
+[1] http://xanadu.com/zigzag/
+
+[2] https://github.com/boris-s/yzz
+
+[3] https://github.com/stavrossk/ZZ_PHPBoard
+
+[4]  https://github.com/wbovela/zztpp-nt
+
+[5] https://github.com/stavrossk/ZZ_PHPBoard
+
+[6] https://journals.tdl.org/jodi/index.php/jodi/article/view/131/129
+
+UTC20151031:
+
+[7] Ix, the zigzag-based OS: https://github.com/enkiv2/ix
+
+
