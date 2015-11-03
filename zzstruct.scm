@@ -25,14 +25,16 @@ downstream neighbor. Therefore, the default minimal zzstruct is
 (((cell 0 0) (0 0))) - a zzstruct of one cell, which is a point along
 the fundamental axis, and thus its own neighbor in both directions.
 
+The "zz-" prefix is used to identify procedures as zzstruct specific.
+
 |#
 
 (define (zz-init cls)
-	(zz-mk-aux cls))
+	(zz-init-aux cls))
 
 (define (zz-init-aux cls)
-	(zz-mk-acc cls '())
-	;(zz-mk-direct cls)
+	(zz-init-acc cls '())
+	;(zz-init-direct cls)
 )
 
 (define (zz-init-direct cls)
@@ -45,22 +47,27 @@ the fundamental axis, and thus its own neighbor in both directions.
 	 [(and (null? cls) (null? acc)) (list '((cell 0 0) (0 0)))] ;default zzstruct - a zzstruct can never be empty
 	 [(null? cls) acc]
 	 [(zz-entry? (car cls)) 
-		(zz-mk-acc (cdr cls) (list acc (car cls)))]))
+		(zz-init-acc (cdr cls) (list acc (car cls)))]))
 
-(define (zzstruct? zs) 
-	(let* ([nl-num (length (cdar zs))] ;length of first cell's neighbor list
-				 [pass? (lambda (ze) ;is an element well-formed and evenly sized?
-									(and (zz-entry? ze) (eq? (length (cdr ze)) nl-num)))])
-		(and-map pass? zs)))
+(define (zz-struct? st) 
+	(let* ([nl-num (length (cdar st))] ;length of first cell's neighbor list
+				 [pass? (lambda (en) ;is an element well-formed and evenly sized?
+									(and (zz-entry? en st) (eq? (length (cdr ze)) nl-num)))])
+		(and-map pass? st)))
 
-(define (zz-entry? cr)
-	(and (cell? (car cr)) (neighbor-list? (cdr cr))))
+(define (zz-entry? en st) ;is en an entry in zzstruct st?
+	(and (zz-cell? (car en)) (neighbor-list? (cdr en) st)))
 
-(define (cell? cl)
+(define (zz-cell? cl) ;is cl a well-formed cell?
 	(and (eq? (car cl) 'cell) (number? (cadr cl)) (eq? (length cl) 3)))
 
-(define (neighbor-list? nl) ;TODO check if neighbors exist
-	(and-map (lambda (ne) (and (ordered-pair? ne) (number? (car ne)) (number? (cadr ne)))) nl))
+(define (neighbor-list? nl st) ;is nl a neighbor list in zzstruct st?
+	(let ([nl-guard (lambda (ne) 
+										(let* ([l (car ne)] [r (cdr ne)] 
+													 [max-index (- (length st) 1)])
+										(and (ordered-pair? ne) (number? l) (number? r)
+												 (<= l max-index) (<= r max-index))))])
+		(and-map nl-guard nl)))
 
 (define (ordered-pair? op)  
 	(eq? (length op) 2))
