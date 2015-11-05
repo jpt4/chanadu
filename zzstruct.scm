@@ -33,26 +33,18 @@ The "zz-" prefix is used to identify procedures as zzstruct specific.
 	(zz-init-aux cls))
 
 (define (zz-init-aux cls)
-	(zz-init-acc cls '())
-	;(zz-init-direct cls)
+	(zz-init-direct cls)
 )
 
 (define (zz-init-direct cls)
 	(cond
 	 [(null? cls) (list '((cell 0 0) (0 0)))] ;default zzstruct - a zzstruct can never be empty
-	 [(zzstruct? cls) cls]))
-
-(define (zz-init-acc cls acc)
-	(cond
-	 [(and (null? cls) (null? acc)) (list '((cell 0 0) (0 0)))] ;default zzstruct - a zzstruct can never be empty
-	 [(null? cls) acc]
-	 [(zz-entry? (car cls)) 
-		(zz-init-acc (cdr cls) (list acc (car cls)))]))
+	 [(zz-struct? cls) cls]))
 
 (define (zz-struct? st) 
 	(let* ([nl-num (length (cdar st))] ;length of first cell's neighbor list
 				 [pass? (lambda (en) ;is an element well-formed and evenly sized?
-									(and (zz-entry? en st) (eq? (length (cdr ze)) nl-num)))])
+									(and (zz-entry? en st) (eq? (length (cdr en)) nl-num)))])
 		(and-map pass? st)))
 
 (define (zz-entry? en st) ;is en an entry in zzstruct st?
@@ -63,11 +55,20 @@ The "zz-" prefix is used to identify procedures as zzstruct specific.
 
 (define (neighbor-list? nl st) ;is nl a neighbor list in zzstruct st?
 	(let ([nl-guard (lambda (ne) 
-										(let* ([l (car ne)] [r (cdr ne)] 
+										(let* ([l (car ne)] [r (cadr ne)] 
 													 [max-index (- (length st) 1)])
 										(and (ordered-pair? ne) (number? l) (number? r)
 												 (<= l max-index) (<= r max-index))))])
 		(and-map nl-guard nl)))
+
+;;zzstructs are built like lists, from terminus forwards
+(define (zz-append cl st)
+	(let ([new-struct (cons cl st)]) 
+		(if (zz-struct?	new-struct)
+				new-struct
+				'bad-apped)))
+
+;;
 
 (define (ordered-pair? op)  
 	(eq? (length op) 2))
