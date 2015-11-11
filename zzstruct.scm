@@ -63,18 +63,34 @@ The "zz-" prefix is used to identify procedures as zzstruct specific.
 
 ;;zzstructs are built like lists, from terminus forwards
 (define (zz-append cl st)
-	(let ([new-struct (cons cl st)]) 
-		(if (zz-struct?	new-struct)
-				new-struct
-				'bad-apped)))
+  (zz-append-simple cl st)
+  ;(zz-append-pauli cl st)
+  )
+   
+(define (zz-append-simple cl st)
+;over each element of st
+  (let ([new-st-simple   
+         (lambda (ce)
+           (let ([new-nbrs (map (lambda (np)
+                                  (up<->down np (cell-index ce)))
+                                (filter member? (cell-index ce) (nlist cl)))])
+             (list (cell-id ce) (nlist ce) new-nbrs)))])
+    (map new-st-simple st)))
 
+;;to lessen cadadddar'ing
+(define (nlist cl)
+  (cdr cl))
+(define (cell-id cl)
+  (car cl))
+(define (cell-index cl)
+  (cadr cl))
 ;;
 
 (define (ordered-pair? op)  
 	(eq? (length op) 2))
 
 (define (atom? a)
-	(or (symbol? a) (number? a)))
+  (not (pair? a)))
 
 (define (zz-generate-random) 'gr)
 
