@@ -62,26 +62,43 @@ The "zz-" prefix is used to identify procedures as zzstruct specific.
 		(and-map nl-guard nl)))
 
 ;;zzstructs are built like lists, from terminus forwards
-(define (zz-append cl st)
-  (zz-append-simple cl st)
+;;zstd = downstream zstu = upstream
+(define (zz-append zstd zstu)
+  (zz-append-simple zstd zstu)
   ;(zz-append-pauli cl st)
   )
    
+#;(define (zz-append-simple zstd zstu)
+	(if (zz-st-compatible? zstd zstu)
+			'a
+			'b
+			))
+
+(define (zz-st-compatible? zd zu)
+	(and (zz-struct? zd) (zz-struct? zu) 
+			 (eq? (zz-st-dimension? zd) (zz-st-dimension? zu))))
+	
+(define (zz-st-dimension? zst)
+	(max (map (lambda (z) (length (cdr z))) zst)))
+
 (define (zz-append-simple cl zst)
-;over each cell of zst
   (let ([new-zst-simple   
          (lambda (ce)
-           (let ([new-nbrs (map reverse
+           (let ([new-nbrs (map (lambda (pa) (up<->down (cell-index ce) pa 
+																												(cell-index cl)))
                                 (filter (lambda (np) 
 																					(member (cell-index ce) np)) 
 																				(nlist cl)))])
-						 (display `(cind-ce ,(cell-index ce)))
-						 (display `(newbrs ,new-nbrs))
-						 (newline)
 						 (if (null? new-nbrs)
 								 ce
 								 (cons (cell-id ce) (append (nlist ce) new-nbrs)))))])
-    (cons c1 (map new-zst-simple zst))))
+    (cons cl (map new-zst-simple zst))))
+
+(define (up<->down n p on) ; number, pair, original number
+	(cond
+	 [(eq? (car p) n) (cons (car p) (cons on '()))]
+	 [(eq? (cadr p) n) (cons on (cons (cadr p) '()))]
+))		
 
 ;;to lessen cadadddar'ing
 (define (nlist cl)
