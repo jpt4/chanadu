@@ -67,15 +67,21 @@ The "zz-" prefix is used to identify procedures as zzstruct specific.
   ;(zz-append-pauli cl st)
   )
    
-(define (zz-append-simple cl st)
-;over each element of st
-  (let ([new-st-simple   
+(define (zz-append-simple cl zst)
+;over each cell of zst
+  (let ([new-zst-simple   
          (lambda (ce)
-           (let ([new-nbrs (map (lambda (np)
-                                  (up<->down np (cell-index ce)))
-                                (filter member? (cell-index ce) (nlist cl)))])
-             (list (cell-id ce) (nlist ce) new-nbrs)))])
-    (map new-st-simple st)))
+           (let ([new-nbrs (map reverse
+                                (filter (lambda (np) 
+																					(member (cell-index ce) np)) 
+																				(nlist cl)))])
+						 (display `(cind-ce ,(cell-index ce)))
+						 (display `(newbrs ,new-nbrs))
+						 (newline)
+						 (if (null? new-nbrs)
+								 ce
+								 (cons (cell-id ce) (append (nlist ce) new-nbrs)))))])
+    (cons c1 (map new-zst-simple zst))))
 
 ;;to lessen cadadddar'ing
 (define (nlist cl)
@@ -83,8 +89,7 @@ The "zz-" prefix is used to identify procedures as zzstruct specific.
 (define (cell-id cl)
   (car cl))
 (define (cell-index cl)
-  (cadr cl))
-;;
+  (cadar cl))
 
 (define (ordered-pair? op)  
 	(eq? (length op) 2))
