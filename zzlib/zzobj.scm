@@ -6,12 +6,29 @@
 (define (zz egg)
 	(define default-zzstruct '(((cell 0 0) (0 0))))
 	(define struct default-zzstruct)
-	(cond
-	 [(zz-struct? egg) (set! struct egg)]
-	 [else (display "error") (newline) (display struct) (newline)]
-	 )
+	(define (self msg)
+		(case (car msg)
+			['get-struct struct]
+			))
+	(begin
+		(cond
+		 [(zz-struct? egg) (set! struct egg)]
+		 [else (display "error") (newline) (display struct) (newline)]
+		 )
+		self)	 
+	)
+
+;test suite
+;compile time
+(define zztst (zz '(((cell 0 0) (0 0)))))
+(define zzerr (zz '(((cell 0 0) (0 0) (1 2)))))
+;run time
+(define (tests)
+		(display (zzt '(get-struct)))
+		(newline)
 )
-	
+
+;public auxiliaries
 (define (zz-struct? st) 
 	(let* ([nl-num (length (cdar st))] ;length of first cell's neighbor list
 				 [pass? (lambda (en) ;is an element well-formed and evenly sized?
@@ -40,7 +57,9 @@
 (define (cell-index cl)
   (cadar cl))
 
+;for guile prelude
 (define (ordered-pair? op)  
 	(eq? (length op) 2))
 (define (atom? a)
   (not (pair? a)))
+
