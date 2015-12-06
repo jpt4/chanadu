@@ -20,8 +20,8 @@
 
 ;test suite
 ;compile time
-(define zztst (zz '(((cell 0 0) (0 0)))))
-(define zzerr (zz '(((cell 0 0) (0 0) (1 2)))))
+(define zztst (zz '(((cell 0 0) (0 0))))) ;test zz object
+(define zzerr (zz '(((cell 0 0) (0 0) (1 2))))) ;should yield error msg
 ;run time
 (define (tests)
     (display (zzt '(get-struct)))
