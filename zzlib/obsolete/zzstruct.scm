@@ -67,8 +67,19 @@ The "zz-" prefix is used to identify procedures as zzstruct specific.
   (zz-append-simple zstd zstu)
   ;(zz-append-pauli cl st)
   )
-   
-#;(define (zz-append-simple zstd zstu)
+
+;is cell zc able to be appended to struct zs via the simple strategy?
+(define (simple-append-acceptible? zc zs)
+#t
+)	
+#;(define (zz-append-simple zsts zstt)
+Re-architect: 
+	Are source and target compatible <- equi-dimensional
+	                                    each cell simply appendable
+                                      collision checking
+	Generate new neighbors between source and target cells, append.
+  Buffer all new zs cells to appropriate square dimensionality.  
+  
 	(if (zz-st-compatible? zstd zstu)
 			'a
 			'b
@@ -82,7 +93,7 @@ The "zz-" prefix is used to identify procedures as zzstruct specific.
 	(max (map (lambda (z) (length (cdr z))) zst)))
 
 (define (zz-append-simple cl zst)
-  (let ([new-zst-simple   
+  (let ([new-zst-simple 
          (lambda (ce)
            (let ([new-nbrs (map (lambda (pa) (up<->down (cell-index ce) pa 
 																												(cell-index cl)))
@@ -110,7 +121,6 @@ The "zz-" prefix is used to identify procedures as zzstruct specific.
 
 (define (ordered-pair? op)  
 	(eq? (length op) 2))
-
 (define (atom? a)
   (not (pair? a)))
 
