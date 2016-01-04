@@ -49,7 +49,7 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
 (define (build-zzcell i c . n)
 	(if (null? n) ;arguments are id and neighbor-list
 			(append i (list c))
-			(list i c (list n)))) ;arg are index, content, and neighbor-list	
+			(list i c (car n)))) ;arg are index, content, and neighbor-list	
 
 ;;declare zzstruct
 (define (mk-zzst)
@@ -57,27 +57,33 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
   (define (view-cell cell-index)
     (list-ref cell-list cell-index))
   (define (add-cell new-cell)
+		(dispnl `(enter add-cell ,new-cell))
 		(if (equal? 'yes (valid-to-add? new-cell))
 				(begin
 					(let ([new-cell-list (gen-new-cell-list new-cell)])
 						(set! cell-list new-cell-list) ;alas, no monads yet
-						)
-				`(error ,new-cell (valid-to-add? new-cell)))))
+						))
+				`(error ,new-cell ,(valid-to-add? new-cell))))
 	(define (gen-new-cell-list new)
+		(dispnl* `(gen-new-cell-list (initial-czs ,cell-list)))
 		(let next ([czs cell-list] ;current zzstruct
 							 [nnl (neighbor-list new)] ;neighbor-list of cell to add
 							 ;\/new zzcell - init as origin cell id plus null neighbor-list
 							 [nzc 
 								(build-zzcell (cell-id (car cell-list)) proto-neighbor-list)]
 							 [nzs '()]) ;new zzstruct
+			(dispnl `(czs ,czs))
 			(cond
-			 [(null? czs) nzs]
-			 [(null? nnl) (next (cdr czs) (neighbor-list new) 
-													(build-zzcell (cell-id (cadr czs)) 
-																				proto-neighbor-list)
-													(append nzs (list nzc)))]
+			 [(null? czs) (dispnl `(nzs ,nzs)) nzs]
+			 [(null? nnl) (dispnl* `(null-nnl ,(cell-id (car czs))))
+				(next (cdr czs) (neighbor-list new)
+							(if (null? (cdr czs))
+									'()
+							(build-zzcell (cell-id (cadr czs)) 
+														proto-neighbor-list))
+							(append nzs (list nzc)))]
 			 ;\/current cell named in first neighbor-pair of new neighbor-list
-			 [(member (cell-index (car czs)) (car nnl)) 
+			 [(member (cell-index (car czs)) (car nnl))
 				(cond
 				 [(eq? (cell-index (car czs)) (upstream (car nnl)))
 					(next czs (cdr nnl) ;keep current zzstruct, see next neighbor-pair
@@ -92,15 +98,22 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
 					])]
 			 )))		
 	(define (valid-to-add? c)
+		(begin (display "look at me!!!!!!!!")
+					 (newline)
+					 (display (car cell-list))
+					 (newline))
 		(if (>= (zzcell-dimensionality c) (zzcell-dimensionality (car cell-list)))
 				'yes
 				'(error ,c under-dimensioned)))
 	(define (zzcell-dimensionality cell)
+		(display
 		(length (neighbor-list cell)))
-
+		(newline)
+		(length (neighbor-list cell)))
+;;message dispatch
   (define (self msg)
     (case (car msg)
-      ['view-zzcell-list cell-list]
+      ['view-cell-list cell-list]
       ['view-cell (view-cell (cadr msg))]
       ['add-cell (add-cell (cadr msg))]
       [else `(error unknown message ,msg)]
@@ -116,23 +129,30 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
                 [e (cadr test-expected-pair)]
                 [result (zzst t)])
                (cond
-                [(equal? e '_) result]
-                [(equal? result e) 'pass]
+								;\/no output/expected output unknown
+                [(equal? e '_) `(,t ,result)] 
+                [(equal? result e) `(pass ,result)]
                 [else `(failed test: ,t expected: ,e produced: ,result)])))
     (map perform-test test-expected-list)
     ))
 
-(define cell-tst-1 (cons (list '1 'content) '((0 1) (1 0))))
+(define zzcl-tst-1 (build-zzcell '1 'content '((0 1))))
 
 (define test-list 
-  `(((view-zzcell-list) ,default-zzstruct)
+  `(((view-cell-list) ,default-zzstruct)
     ((view-cell 0) ,origin-zzcell)
-    ((add-cell ,cell-tst-1) _)
+    ((add-cell ,zzcl-tst-1) _)
+		((view-cell-list) _)
     )
 )
 
-(test-suite zzst-tst test-list)
+(define (run-tests) (test-suite zzst-tst test-list))
 
+;generic utilities
+(define (dispnl msg)
+	(begin (display msg) (newline)))
+(define (dispnl* msg-ls)
+	(map (lambda (m) (begin (display m) (newline))) msg-ls))
 #|
 (use-modules (srfi srfi-9))
 
