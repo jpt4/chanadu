@@ -29,11 +29,6 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
   (append (list origin-cell-index origin-cell-content) 
           (list origin-neighbor-list)))
 (define default-zzstruct (list origin-zzcell))
-;data prototypes
-(define proto-zzstruct (list proto-zzcell))
-(define proto-zzcell '(nat data ((nat nat))))
-(define proto-cell-id (cell-id proto-zzcell))
-(define proto-neighbor-list (neighbor-list proto-zzcell))
 ;;zzstruct carving
 (define (cell-index cell)
   (car cell))
@@ -45,6 +40,11 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
   (car neighbor-pair))
 (define (downstream neighbor-pair)
   (cadr neighbor-pair))
+;data prototypes
+(define proto-zzcell '(nat data ((nat nat))))
+(define proto-zzstruct (list proto-zzcell))
+(define proto-cell-id (cell-id proto-zzcell))
+(define proto-neighbor-list (neighbor-list proto-zzcell))
 ;;build zzcell from [[[index content] | id] neighbor-list]
 (define (build-zzcell i c . n)
 	(if (null? n) ;arguments are id and neighbor-list
@@ -74,7 +74,9 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
 							 [nzs '()]) ;new zzstruct
 			(dispnl `(czs ,czs))
 			(cond
-			 [(null? czs) (dispnl `(nzs ,nzs)) nzs]
+			 ;\/current cell-list empty
+			 [(null? czs) (dispnl `(only see this once nzs ,nzs)) (append nzs (list new))]
+			 ;\/new cell neighbor list empty
 			 [(null? nnl) (dispnl* `(null-nnl ,(cell-id (car czs))))
 				(next (cdr czs) (neighbor-list new)
 							(if (null? (cdr czs))
@@ -95,7 +97,20 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
 																					`((,(cell-index (car czs))
 																						 ,(cell-index new))))))
 								nzs)
+					]
+				 [(eq? (cell-index (car czs)) (downstream (car nnl)))
+					(next czs (cdr nnl) ;keep current zzstruct, see next neighbor-pair
+								(build-zzcell (cell-id nzc) 
+															(if (eq? proto-neighbor-list (neighbor-list nzc))
+																	`((,(cell-index new)
+																		 ,(cell-index (car czs))))
+																	(append (neighbor-list nzc)
+																					`((,(cell-index new)
+																						 ,(cell-index (car czs)))))))
+								nzs)
 					])]
+			 ;\/current cell not named, next neighbor-pair, same current cell-list
+			 [else (next czs (cdr nnl) nzc nzs)]
 			 )))		
 	(define (valid-to-add? c)
 		(begin (display "look at me!!!!!!!!")
@@ -136,12 +151,15 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
     (map perform-test test-expected-list)
     ))
 
-(define zzcl-tst-1 (build-zzcell '1 'content '((0 1))))
+(define zzcl-tst-1 (build-zzcell '1 'content '((0 1) (0 1))))
+(define zzcl-tst-2 (build-zzcell '2 'content '((1 2) (1 0))))
 
 (define test-list 
   `(((view-cell-list) ,default-zzstruct)
     ((view-cell 0) ,origin-zzcell)
     ((add-cell ,zzcl-tst-1) _)
+		((view-cell-list) _)
+    ((add-cell ,zzcl-tst-2) _)
 		((view-cell-list) _)
     )
 )
