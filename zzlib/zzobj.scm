@@ -21,6 +21,28 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
             ...)
 |#
 
+;record type experiment
+(use-modules (srfi srfi-9))
+
+(define-record-type <zzcell>
+  (mk-zzcell index content neighbor-list)
+  zzcell?
+  (index zzcell-index)
+  (content zzcell-content set-zzcell-content!)
+  (neighbor-list zzcell-neighbor-list set-zzcell-neighbor-list!))
+
+(define (pad-zzcl pre tar)
+	(letrec* ([diff (- (length (zzcell-neighbor-list tar)) 
+										 (length (zzcell-neighbor-list pre)))]
+						[pad (map (lambda (n) `(,(zzcell-index pre) ,(zzcell-index pre)))
+											(iota diff))])
+	  (set-zzcell-neighbor-list! pre (append (zzcell-neighbor-list pre) pad))))
+						
+(define short (mk-zzcell 4 'pay '((3 5) (0 4))))
+(define long (mk-zzcell 5 'con '((4 6) (1 2) (3 4))))
+
+(define cls (list root-zzcl (mk-zzcell 1 'first '((0 2) (2 0)))))
+
 ;default data structure
 (define origin-cell-index 0)
 (define origin-cell-content 0)
@@ -172,14 +194,7 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
 (define (dispnl* msg-ls)
 	(map (lambda (m) (begin (display m) (newline))) msg-ls))
 #|
-(use-modules (srfi srfi-9))
 
-(define-record-type <zzcell>
-  (mk-zzcell id content neighbor-list)
-  zzcell?
-  (id cell-id)
-  (content cell-content set-cell-content!)
-  (neighbor-list cell-neighbor-list set-cell-neighbor-list!))
 
 (define (zz egg)
   (define default-zzstruct '((cell 0 0) (0 0)))
