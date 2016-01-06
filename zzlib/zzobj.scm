@@ -21,57 +21,63 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
             ...)
 |#
 
-;record type experiment
-(use-modules (srfi srfi-9))
+#|
+naming conventions in context
+zzstruct in comments, zzst in functions, zst in arguments
+zzcell, zzcl, zcl
+zzcell-index, zzix, zix
+zzcell-content, zzco, zco
+zzcell-id, zzid, zid
+zzcell-neighbor-list, zznl, znl
+zzcell-neighbor-pair, zznp, znp
+|#
 
-(define-record-type <zzcell>
-  (mk-zzcell index content neighbor-list)
-  zzcell?
-  (index zzcell-index)
-  (content zzcell-content set-zzcell-content!)
-  (neighbor-list zzcell-neighbor-list set-zzcell-neighbor-list!))
-
-(define (pad-zzcl pre tar)
-	(letrec* ([diff (- (length (zzcell-neighbor-list tar)) 
-										 (length (zzcell-neighbor-list pre)))]
-						[pad (map (lambda (n) `(,(zzcell-index pre) ,(zzcell-index pre)))
-											(iota diff))])
-	  (set-zzcell-neighbor-list! pre (append (zzcell-neighbor-list pre) pad))))
-						
-(define short (mk-zzcell 4 'pay '((3 5) (0 4))))
-(define long (mk-zzcell 5 'con '((4 6) (1 2) (3 4))))
-
-(define cls (list root-zzcl (mk-zzcell 1 'first '((0 2) (2 0)))))
-
-;default data structure
-(define origin-cell-index 0)
-(define origin-cell-content 0)
-(define origin-neighbor-list '((0 0)))
-(define origin-zzcell 
-  (append (list origin-cell-index origin-cell-content) 
-          (list origin-neighbor-list)))
-(define default-zzstruct (list origin-zzcell))
-;;zzstruct carving
-(define (cell-index cell)
-  (car cell))
-(define (cell-id cell) ;index + content
-  (list-head cell 2))
-(define (neighbor-list cell)
-  (caddr cell))
-(define (upstream neighbor-pair)
-  (car neighbor-pair))
-(define (downstream neighbor-pair)
-  (cadr neighbor-pair))
-;data prototypes
-(define proto-zzcell '(nat data ((nat nat))))
-(define proto-zzstruct (list proto-zzcell))
-(define proto-cell-id (cell-id proto-zzcell))
-(define proto-neighbor-list (neighbor-list proto-zzcell))
 ;;build zzcell from [[[index content] | id] neighbor-list]
-(define (build-zzcell i c . n)
-	(if (null? n) ;arguments are id and neighbor-list
+(define (build-zzcl i c . n)
+	(if (null? n) ;arguments are zzcell-id and zzcell-neighbor-list
 			(append i (list c))
 			(list i c (car n)))) ;arg are index, content, and neighbor-list	
+;;build zzstruct from >=1 zzcells
+(define (build-zzst c . ls)
+	(if (null? ls) (list c)	(list c ls)))
+
+;;zzstruct element carving
+(define (zzst-head zst) (car zst))    ;first zzcell of zzstruct
+(define (zzix zcl) (car zcl))         ;zzcell-index
+(define (zzco zcl) (cadr zcl))        ;zzcell-content
+(define (zzid zcl) (list-head zcl 2)) ;zzcell-id, index+content
+(define (zznl zcl) (caddr zcl))       ;zzcell-neighbor-list of zzcell
+(define (zznl-head znl) (car znl))    ;first zzcell-neighbor-pair of 
+                                      ;zzcell-neighbor list
+(define (zzcl-first-zznp zcl) (car (zznl zcl))) ;first zzcell-neighbor-pair of
+                                                ;zzcell
+
+;;pad nl of pre to length of tar
+(define (pad-zzcl pre tar)
+	(letrec* ([diff (- (length (zznl tar)) (length (zznl pre)))]
+						[pad (map (lambda (n) `(,(zzix pre) ,(zzix pre)))	(iota diff))])
+	  (build-zzcl (zzid pre) (append (zznl pre) pad))))
+
+(define (pad-zzcl-test)
+(let* ([tst0 (build-zzcl '0 'short '((0 0)))]
+			 [tst1 (build-zzcl '1 'long '((0 1) (2 3) (0 5)))])
+	(pad-zzcl tst0 tst1))
+)
+
+;;default data structure
+(define origin-zzix 0)
+(define origin-zzco 0)
+(define origin-zznl '((0 0)))
+(define origin-zzcl (build-zzcl origin-zzix origin-zzco origin-zznl))
+(define origin-zzid (zzid origin-zzcl))
+(define default-zzst (build-zzst origin-zzcl))
+
+;symbolic prototypes
+(define proto-zzcl (build-zzcl 'nat 'data '((nat nat))))
+(define proto-zzst (build-zzst proto-zzcl))
+(define proto-zzix (zzix proto-zzcl))
+(define proto-zzid (zzid proto-zzcl))
+(define proto-zznl (zznl proto-zzcl))
 
 ;;declare zzstruct
 (define (mk-zzst)
@@ -92,7 +98,7 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
 							 [nnl (neighbor-list new)] ;neighbor-list of cell to add
 							 ;\/new zzcell - init as origin cell id plus null neighbor-list
 							 [nzc 
-								(build-zzcell (cell-id (car cell-list)) proto-neighbor-list)]
+								(build-zzcl (cell-id (car cell-list)) proto-neighbor-list)]
 							 [nzs '()]) ;new zzstruct
 			(dispnl `(czs ,czs))
 			(cond
@@ -103,7 +109,7 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
 				(next (cdr czs) (neighbor-list new)
 							(if (null? (cdr czs))
 									'()
-							(build-zzcell (cell-id (cadr czs)) 
+							(build-zzcl (cell-id (cadr czs)) 
 														proto-neighbor-list))
 							(append nzs (list nzc)))]
 			 ;\/current cell named in first neighbor-pair of new neighbor-list
@@ -173,8 +179,8 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
     (map perform-test test-expected-list)
     ))
 
-(define zzcl-tst-1 (build-zzcell '1 'content '((0 1) (0 1))))
-(define zzcl-tst-2 (build-zzcell '2 'content '((1 2) (1 0))))
+(define zzcl-tst-1 (build-zzcl '1 'content '((0 1) (0 1))))
+(define zzcl-tst-2 (build-zzcl '2 'content '((1 2) (1 0))))
 
 (define test-list 
   `(((view-cell-list) ,default-zzstruct)
@@ -193,17 +199,26 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
 	(begin (display msg) (newline)))
 (define (dispnl* msg-ls)
 	(map (lambda (m) (begin (display m) (newline))) msg-ls))
+
 #|
+;record type experiment
+(use-modules (srfi srfi-9))
 
+(define-record-type <zzcell>
+  (mk-zzcell index content neighbor-list)
+  zzcell?
+  (index zzcell-index)
+  (content zzcell-content set-zzcell-content!)
+  (neighbor-list zzcell-neighbor-list set-zzcell-neighbor-list!))
 
-(define (zz egg)
-  (define default-zzstruct '((cell 0 0) (0 0)))
-  (define struct default-zzstruct)
-  (if (zzstruct? egg)
-      (set! struct egg)
-      else
-      (display `(,egg not a valid zzstruct))
-      (newline)
-      (display `(current struct is ,struct)))
+(define (pad-zzcell pre tar)
+	(letrec* ([diff (- (length (zzcell-neighbor-list tar)) 
+										 (length (zzcell-neighbor-list pre)))]
+						[pad (map (lambda (n) `(,(zzcell-index pre) ,(zzcell-index pre)))
+											(iota diff))])
+	  (set-zzcell-neighbor-list! pre (append (zzcell-neighbor-list pre) pad))))
+					 
+(define short (mk-zzcell 4 'pay '((3 5) (0 4))))
+(define long (mk-zzcell 5 'con '((4 6) (1 2) (3 4))))
+(define cls (list 'root-zzcl (mk-zzcell 1 'first '((0 2) (2 0)))))
 |#
-
