@@ -51,6 +51,8 @@ zzcell-neighbor-pair, zznp, znp
                                       ;zzcell-neighbor list
 (define (zzcl-first-zznp zcl) (car (zznl zcl))) ;first zzcell-neighbor-pair of
                                                 ;zzcell
+(define (zznp-at-axis zcl ax) (list-ref (zznl zcl) ax)) ;zzncell-neighbor-pair
+                                                        ;at an axis in zzcell
 
 ;;pad nl of pre to length of tar
 (define (pad-zzcl pre tar)
@@ -59,10 +61,14 @@ zzcell-neighbor-pair, zznp, znp
 	  (build-zzcl (zzid pre) (append (zznl pre) pad))))
 
 (define (pad-zzcl-test)
-(let* ([tst0 (build-zzcl '0 'short '((0 0)))]
-			 [tst1 (build-zzcl '1 'long '((0 1) (2 3) (0 5)))])
-	(pad-zzcl tst0 tst1))
-)
+	(let* ([tst0 (build-zzcl '0 'short '((0 0)))]
+				 [tst1 (build-zzcl '1 'long '((0 1) (2 3) (0 5)))])
+		(pad-zzcl tst0 tst1))
+	)
+
+;;view an axis of a zzstruct
+(define (view-axis zst ax)
+	(map (lambda (zcl) (zznp-at-axis zcl ax)) zst))
 
 ;;default data structure
 (define origin-zzix 0)
@@ -81,7 +87,7 @@ zzcell-neighbor-pair, zznp, znp
 
 ;;declare zzstruct
 (define (mk-zzst)
-  (define cell-list default-zzstruct)
+  (define cell-list default-zzst)
   (define (view-cell cell-index)
     (list-ref cell-list cell-index))
   (define (add-cell new-cell)
@@ -183,8 +189,8 @@ zzcell-neighbor-pair, zznp, znp
 (define zzcl-tst-2 (build-zzcl '2 'content '((1 2) (1 0))))
 
 (define test-list 
-  `(((view-cell-list) ,default-zzstruct)
-    ((view-cell 0) ,origin-zzcell)
+  `(((view-cell-list) ,default-zzst)
+    ((view-cell 0) ,origin-zzcl)
     ((add-cell ,zzcl-tst-1) _)
 		((view-cell-list) _)
     ((add-cell ,zzcl-tst-2) _)
