@@ -51,7 +51,7 @@ zzcell-neighbor-pair, zznp, znp
                                       ;zzcell-neighbor list
 (define (zzcl-first-zznp zcl) (car (zznl zcl))) ;first zzcell-neighbor-pair of
                                                 ;zzcell
-(define (zznp-at-axis zcl ax) (list-ref (zznl zcl) ax)) ;zzncell-neighbor-pair
+(define (zznp-at-axis zcl ax) (list-ref (zznl zcl) ax)) ;zzcell-neighbor-pair
                                                         ;at an axis in zzcell
 
 ;;pad nl of pre to length of tar
@@ -66,9 +66,11 @@ zzcell-neighbor-pair, zznp, znp
 		(pad-zzcl tst0 tst1))
 	)
 
-;;view an axis of a zzstruct
-(define (view-axis zst ax)
-	(map (lambda (zcl) (zznp-at-axis zcl ax)) zst))
+;;view an axis of a zzstruct, plus zzcell-content if verbose
+(define (view-axis zst ax . v)
+	(if (equal? v 'v)
+			(map (lambda (zcl) (list (zco zcl) (zznp-at-zxis zcl ax))) zst)
+			(map (lambda (zcl) (zznp-at-axis zcl ax)) zst)))
 
 ;;default data structure
 (define origin-zzix 0)
