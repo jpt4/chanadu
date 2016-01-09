@@ -39,9 +39,9 @@ zzcell-neighbor-pair, zznp, znp
 			(list i c (car n)))) ;arg are index, content, and neighbor-list	
 ;;build zzstruct from >=1 zzcells
 (define (build-zzst c . ls)
-	(if (null? ls) (list c)	(list c ls)))
+	(if (null? ls) (list c)	(cons c ls)))
 
-;;zzstruct element carving
+;;zzstruct carving
 (define (zzst-head zst) (car zst))    ;first zzcell of zzstruct
 (define (zzix zcl) (car zcl))         ;zzcell-index
 (define (zzco zcl) (cadr zcl))        ;zzcell-content
@@ -54,7 +54,7 @@ zzcell-neighbor-pair, zznp, znp
 (define (zznp-at-axis zcl ax) (list-ref (zznl zcl) ax)) ;zzcell-neighbor-pair
                                                         ;at an axis in zzcell
 
-;;pad nl of pre to length of tar
+;;pad zzcell-neighborlist of pre to length of tar
 (define (pad-zzcl pre tar)
 	(letrec* ([diff (- (length (zznl tar)) (length (zznl pre)))]
 						[pad (map (lambda (n) `(,(zzix pre) ,(zzix pre)))	(iota diff))])
@@ -68,9 +68,35 @@ zzcell-neighbor-pair, zznp, znp
 
 ;;view an axis of a zzstruct, plus zzcell-content if verbose
 (define (view-axis zst ax . v)
-	(if (equal? v 'v)
-			(map (lambda (zcl) (list (zco zcl) (zznp-at-zxis zcl ax))) zst)
-			(map (lambda (zcl) (zznp-at-axis zcl ax)) zst)))
+	(let ([axis (map (lambda (zcl) (zznp-at-axis zcl ax)) zst)])
+		(if (equal? '(v) v)
+				(pair-zip (map zzid zst) axis)
+				axis)))
+				
+;;list->list->(elm-i, elm-i)				
+(define (pair-zip m n)
+	(cond
+	 [(not (equal? (length m) (length n)))
+		`(error length ,(length m) m != length ,(length n) n)]
+	 [(or-map null? (list m n)) '()]
+	 [else (cons `(,(car m) ,(car n)) (pair-zip (cdr m) (cdr n)))]
+))		
+
+;;test zzstruct 0-1-2-3-4-5; 2-0-5-4-3-1; 4-3-2; 0-1-2->; 0-5, 1-4-2
+;;application note: though possible, a zzcell should in practice not exist
+;;as a disconnected singleton (a single point cycle) in a dimension. This
+;;differs from a zzcell which does not intersect with an axis (i.e. whose 
+;;neighbor-pair is '(_ _) at that index).
+(define tstzzst0 
+	(build-zzst (build-zzcl '0 'zero '((_ 1) (2 5) (_ _) (2 1) (_ 5)))
+							(build-zzcl '1 'one '((0 2) (3 _) (_ _) (0 2) (_ 4)))
+							(build-zzcl '2 'two '((1 3) (_ 0) (3 2) (1 0) (4 _)))
+							(build-zzcl '3 'three '((2 4) (4 1) (4 2) (_ _) (_ _)))
+							(build-zzcl '4 'four '((3 5) (5 3) (_ 3) (_ _) (1 2)))
+							(build-zzcl '5 'five '((4 _) (0 4) (_ _) (_ _) (0 _)))
+))
+
+(define (print-zzst zst) (dispnl* zst))
 
 ;;default data structure
 (define origin-zzix 0)
@@ -87,6 +113,7 @@ zzcell-neighbor-pair, zznp, znp
 (define proto-zzid (zzid proto-zzcl))
 (define proto-zznl (zznl proto-zzcl))
 
+#|
 ;;declare zzstruct
 (define (mk-zzst)
   (define cell-list default-zzst)
@@ -201,12 +228,13 @@ zzcell-neighbor-pair, zznp, znp
 )
 
 (define (run-tests) (test-suite zzst-tst test-list))
+|#
 
 ;generic utilities
 (define (dispnl msg)
 	(begin (display msg) (newline)))
 (define (dispnl* msg-ls)
-	(map (lambda (m) (begin (display m) (newline))) msg-ls))
+	(for-each (lambda (m) (begin (display m) (newline))) msg-ls))
 
 #|
 ;record type experiment
