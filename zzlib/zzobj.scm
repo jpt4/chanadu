@@ -52,7 +52,9 @@ zzcell-neighbor-pair, zznp, znp
 (define (zzcl-first-zznp zcl) (car (zznl zcl))) ;first zzcell-neighbor-pair of
                                                 ;zzcell
 (define (zznp-at-axis zcl ax) (list-ref (zznl zcl) ax)) ;zzcell-neighbor-pair
-                                                        ;at an axis in zzcell
+																				;at an axis in zzcell
+(define (upstream znp) (car znp))
+(define (downstream znp) (cadr znp))
 
 ;;pad zzcell-neighborlist of pre to length of tar
 (define (pad-zzcl pre tar)
@@ -82,6 +84,16 @@ zzcell-neighbor-pair, zznp, znp
 	 [else (cons `(,(car m) ,(car n)) (pair-zip (cdr m) (cdr n)))]
 ))		
 
+(define (print-zzst zst) (dispnl* zst))
+
+;;walk up or down axis ax, beginning from zzcell zcl
+(define (walk-axis zst zcl ax dir)
+	(case dir
+		['up (cond
+					[(equal? '_ (car (upstream (zznp-at-axis zcl ax))) (zid ]
+								]
+		['down]
+
 ;;test zzstruct 0-1-2-3-4-5; 2-0-5-4-3-1; 4-3-2; 0-1-2->; 0-5, 1-4-2
 ;;application note: though possible, a zzcell should in practice not exist
 ;;as a disconnected singleton (a single point cycle) in a dimension. This
@@ -96,7 +108,7 @@ zzcell-neighbor-pair, zznp, znp
 							(build-zzcl '5 'five '((4 _) (0 4) (_ _) (_ _) (0 _)))
 ))
 
-(define (print-zzst zst) (dispnl* zst))
+
 
 ;;default data structure
 (define origin-zzix 0)
