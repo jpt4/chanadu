@@ -43,6 +43,8 @@ zzcell-neighbor-pair, zznp, znp
 
 ;;zzstruct carving
 (define (zzst-head zst) (car zst))    ;first zzcell of zzstruct
+(define (zzcl-with-index zst zix)       ;zzcell with index in zzstruct
+	(list-ref zst zix)) 
 (define (zzix zcl) (car zcl))         ;zzcell-index
 (define (zzco zcl) (cadr zcl))        ;zzcell-content
 (define (zzid zcl) (list-head zcl 2)) ;zzcell-id, index+content
@@ -86,12 +88,15 @@ zzcell-neighbor-pair, zznp, znp
 
 (define (print-zzst zst) (dispnl* zst))
 
-;;walk up or down axis ax, beginning from zzcell zcl
-(define (walk-axis zst zcl ax dir)
-	(case dir
-		['up (cond
-					[(equal? '_ (car (upstream (zznp-at-axis zcl ax))) (zid ]
-								]
+;;walk up or down axis ax, from zzcell zcl to its nearest dimensional neighbor
+(define (walk-to-zzcl zst zcl ax dir)
+	(let ([new-zix (upstream (zznp-at-axis zcl ax))])
+		(case dir
+		['up 
+					 (cond
+						[(equal? '_ up-zix) `(error no neighbor ,dir from zzcell ,(zzix zcl) along axis ,ax)]
+						[(zzcl-with-index zst (upstream (zznp-at-axis zcl ax)))]
+						))]
 		['down]
 
 ;;test zzstruct 0-1-2-3-4-5; 2-0-5-4-3-1; 4-3-2; 0-1-2->; 0-5, 1-4-2
@@ -107,8 +112,6 @@ zzcell-neighbor-pair, zznp, znp
 							(build-zzcl '4 'four '((3 5) (5 3) (_ 3) (_ _) (1 2)))
 							(build-zzcl '5 'five '((4 _) (0 4) (_ _) (_ _) (0 _)))
 ))
-
-
 
 ;;default data structure
 (define origin-zzix 0)
