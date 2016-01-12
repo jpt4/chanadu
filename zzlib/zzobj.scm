@@ -43,18 +43,20 @@ zzcell-neighbor-pair, zznp, znp
 
 ;;zzstruct carving
 (define (zzst-head zst) (car zst))    ;first zzcell of zzstruct
-(define (zzcl-with-index zst zix)       ;zzcell with index in zzstruct
+(define (zzcl-ref zst zix)            ;zzcell with given index in zzstruct
 	(list-ref zst zix)) 
 (define (zzix zcl) (car zcl))         ;zzcell-index
 (define (zzco zcl) (cadr zcl))        ;zzcell-content
 (define (zzid zcl) (list-head zcl 2)) ;zzcell-id, index+content
 (define (zznl zcl) (caddr zcl))       ;zzcell-neighbor-list of zzcell
 (define (zznl-head znl) (car znl))    ;first zzcell-neighbor-pair of 
-                                      ;zzcell-neighbor list
+                                     ;zzcell-neighbor-list
+(define (zznp-ref znl nix)            ;zzcell-neighbor-pair with given index in
+	(list-ref znl nix))                ;zzcell-neighbor-list
 (define (zzcl-first-zznp zcl) (car (zznl zcl))) ;first zzcell-neighbor-pair of
-                                                ;zzcell
+                                               ;zzcell
 (define (zznp-at-axis zcl ax) (list-ref (zznl zcl) ax)) ;zzcell-neighbor-pair
-																				;at an axis in zzcell
+																				               ;at an axis in zzcell
 (define (upstream znp) (car znp))
 (define (downstream znp) (cadr znp))
 
@@ -77,7 +79,7 @@ zzcell-neighbor-pair, zznp, znp
 				(pair-zip (map zzid zst) axis)
 				axis)))
 				
-;;list->list->(elm-i, elm-i)				
+;;two lists of elements yield one list of ordered pairs
 (define (pair-zip m n)
 	(cond
 	 [(not (equal? (length m) (length n)))
@@ -89,15 +91,57 @@ zzcell-neighbor-pair, zznp, znp
 (define (print-zzst zst) (dispnl* zst))
 
 ;;walk up or down axis ax, from zzcell zcl to its nearest dimensional neighbor
-(define (walk-to-zzcl zst zcl ax dir)
-	(let ([new-zix (upstream (zznp-at-axis zcl ax))])
+#;(define (zzcl-axial-neighbor zst zix ax dir)
+	(let ([zcl (zzcl-ref zxs zix)])
 		(case dir
-		['up 
-					 (cond
-						[(equal? '_ up-zix) `(error no neighbor ,dir from zzcell ,(zzix zcl) along axis ,ax)]
-						[(zzcl-with-index zst (upstream (zznp-at-axis zcl ax)))]
-						))]
-		['down]
+			['up (let ([up-zix (upstream (zznp-at-axis zcl ax))])
+						 (cond
+							[(equal? '_ up-zix) 
+							 `(error no neighbor ,dir from zzcell ,zix along axis ,ax)]
+							[(zzcl-ref zst up-zix)]
+							))]
+			['down (let ([down-zix (downstream (zznp-at-axis zcl ax))])
+							 (cond
+								[(equal? '_ down-zix) 
+								 `(error no neighbor ,dir from zzcell ,zix along axis ,ax)]
+								[(zzcl-ref zst down-zix)]
+								))]
+			)))
+
+;;(eval) compatible with Chez Scheme
+(define-syntax eval 
+	(syntax-rules ()
+		[(eval exp) (primitive-eval exp)]
+		[(eval exp env) (eval exp env)]
+))
+#|
+	(if (null? env)
+			(primitive-eval exp)
+			(eval exp (car env))))
+|#
+;;genericized internal (result) via (eval) on dynamic data
+;;uses 'upstream as both function reference and literal symbol
+(define (alt-zzcell-axial-neighbor zst zix ax dir)
+	(letrec* ([zcl (zzcl-ref zst zix)]
+						[znp (zznp-at-axis zcl ax)]
+						;\/mad with dynamic power
+						[new-zix (eval `(,(symbol-append dir 'stream)	,znp))]
+						[new-zcl
+						 (cond
+							[(equal? '_ new-zix) 
+							 `(error no neighbor ,dir from zzcell ,zix along axis ,ax)]
+							[(zzcl-ref zst new-zix)]
+							)])
+					 new-zcl
+					#;(cond 
+					 [(equal? dir 'up) 'upstream]
+					 [(equal? dir 'down) 'downstream])
+	  			 ;\/why does (case), not (cond), evoke "duplicate datum" 
+           ;\/warning?
+					#;(case dir
+					 ['up 'upstream]
+					 ['down 'downstream])
+	))
 
 ;;test zzstruct 0-1-2-3-4-5; 2-0-5-4-3-1; 4-3-2; 0-1-2->; 0-5, 1-4-2
 ;;application note: though possible, a zzcell should in practice not exist
