@@ -59,6 +59,7 @@ zzcell-neighbor-pair, zznp, znp
 																				               ;at an axis in zzcell
 (define (upstream znp) (car znp))
 (define (downstream znp) (cadr znp))
+(define (zzix-null? zix) (equal? '_ zix))
 
 ;;pad zzcell-neighborlist of pre to length of tar
 (define (pad-zzcl pre tar)
@@ -72,13 +73,32 @@ zzcell-neighbor-pair, zznp, znp
 		(pad-zzcl tst0 tst1))
 	)
 
-;;view an axis of a zzstruct, plus zzcell-content if verbose
-(define (view-axis zst ax . v)
+;;view the zzcell-neighbor-pair data for an axis of a zzstruct, plus 
+;;zzcell-content if verbose
+(define (all-zznp-along-axis zst ax . v)
 	(let ([axis (map (lambda (zcl) (zznp-at-axis zcl ax)) zst)])
 		(if (equal? '(v) v)
 				(pair-zip (map zzid zst) axis)
 				axis)))
-				
+
+;;all zzcell-content present on a given axis
+(define (global-zzco-on-axis zst ax)
+	'global-zzco-along-axis)
+
+;;nearest neighbor zzcells
+(define (zzcl-neighbors-on-axis zst zix ax)
+	(letrec* ([znp (zznp-at-axis (zzcl-ref zst zix) ax)]
+					 [up (upstream znp)]
+					 [down (downstream znp)])
+		(list (if (zzix-null? up) '_ (zzcl-ref zst up))
+					(if (zzix-null? down) '_ (zzcl-ref zst down))
+					)))
+
+;;upstream zzcell, target zzcell, downstream zzcell
+(define (zzcl-local-neighborhood zst zix ax)
+	(let ([znbs (zzcl-neighbors-on-axis zst zix ax)])
+		(list (upstream znbs) (zzcl-ref zst zix) (downstream znbs))))
+
 ;;two lists of elements yield one list of ordered pairs
 (define (pair-zip m n)
 	(cond
