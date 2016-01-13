@@ -111,7 +111,7 @@ zzcell-neighbor-pair, zznp, znp
 (define (print-zzst zst) (dispnl* zst))
 
 ;;walk up or down axis ax, from zzcell zcl to its nearest dimensional neighbor
-#;(define (zzcl-axial-neighbor zst zix ax dir)
+(define (zzcl-axial-neighbor zst zix ax dir)
 	(let ([zcl (zzcl-ref zxs zix)])
 		(case dir
 			['up (let ([up-zix (upstream (zznp-at-axis zcl ax))])
