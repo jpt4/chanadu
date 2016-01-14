@@ -23,7 +23,7 @@ zzstruct = ((3 'grandson ((2 4) (upstream downstream) neighbor-pair ...))
 
 #|
 naming conventions in context
-zzstruct in comments, zzst in functions, zst in arguments
+zzstruct in comments, zzst in functions, zst in arguments/assignments/variables
 zzcell, zzcl, zcl
 zzcell-index, zzix, zix
 zzcell-content, zzco, zco
@@ -112,7 +112,7 @@ zzcell-neighbor-pair, zznp, znp
 
 ;;walk up or down axis ax, from zzcell zcl to its nearest dimensional neighbor
 (define (zzcl-axial-neighbor zst zix ax dir)
-	(let ([zcl (zzcl-ref zxs zix)])
+	(let ([zcl (zzcl-ref zst zix)])
 		(case dir
 			['up (let ([up-zix (upstream (zznp-at-axis zcl ax))])
 						 (cond
@@ -141,16 +141,16 @@ zzcell-neighbor-pair, zznp, znp
 |#
 ;;genericized internal (result) via (eval) on dynamic data
 ;;uses 'upstream as both function reference and literal symbol
-(define (alt-zzcell-axial-neighbor zst zix ax dir)
-	(letrec* ([zcl (zzcl-ref zst zix)]
-						[znp (zznp-at-axis zcl ax)]
+(define (alt-zzcl-axial-neighbor zst zix ax dir)
+	(letrec* ([zcl (zzcl-ref zst zix)] ;zzcell of interest
+						[znp (zznp-at-axis zcl ax)] ;zzcell-neighbor-pair of interest
 						;\/mad with dynamic power
-						[new-zix (eval `(,(symbol-append dir 'stream)	,znp))]
+						[new-zix (eval `(,(symbol-append dir 'stream) (quote ,znp)))]
 						[new-zcl
 						 (cond
 							[(equal? '_ new-zix) 
 							 `(error no neighbor ,dir from zzcell ,zix along axis ,ax)]
-							[(zzcl-ref zst new-zix)]
+							[else (zzcl-ref zst new-zix)]
 							)])
 					 new-zcl
 					#;(cond 
@@ -176,6 +176,12 @@ zzcell-neighbor-pair, zznp, znp
 							(build-zzcl '4 'four '((3 5) (5 3) (_ 3) (_ _) (1 2)))
 							(build-zzcl '5 'five '((4 _) (0 4) (_ _) (_ _) (0 _)))
 ))
+
+;;generic utilities
+(define (dispnl msg)
+	(begin (display msg) (newline)))
+(define (dispnl* msg-ls)
+	(for-each (lambda (m) (begin (display m) (newline))) msg-ls))
 
 ;;default data structure
 (define origin-zzix 0)
@@ -307,13 +313,10 @@ zzcell-neighbor-pair, zznp, znp
 )
 
 (define (run-tests) (test-suite zzst-tst test-list))
+
 |#
 
-;generic utilities
-(define (dispnl msg)
-	(begin (display msg) (newline)))
-(define (dispnl* msg-ls)
-	(for-each (lambda (m) (begin (display m) (newline))) msg-ls))
+
 
 #|
 ;record type experiment
