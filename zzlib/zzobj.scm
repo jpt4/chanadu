@@ -81,6 +81,14 @@ zzcell-neighbor-pair, zznp, znp
 				(pair-zip (map zzid zst) axis)
 				axis)))
 
+;;rank - a series of locally connected cells in a dimension
+(define (zzst-rank zst zix)
+	(zzcl-ref zzst (min (zzst-rank-dir zst zix 'up) (zzst-rank-dir zst zix 'down)
+
+(define (zzcl-rank-sort zcla zclb ax)
+	(cond
+	 [
+
 ;;all zzcell-content present on a given axis
 (define (global-zzco-on-axis zst ax)
 	'global-zzco-along-axis)
@@ -134,11 +142,7 @@ zzcell-neighbor-pair, zznp, znp
 		[(eval exp) (primitive-eval exp)]
 		[(eval exp env) (eval exp env)]
 ))
-#|
-	(if (null? env)
-			(primitive-eval exp)
-			(eval exp (car env))))
-|#
+
 ;;genericized internal (result) via (eval) on dynamic data
 ;;uses 'upstream as both function reference and literal symbol
 (define (alt-zzcl-axial-neighbor zst zix ax dir)
@@ -153,15 +157,7 @@ zzcell-neighbor-pair, zznp, znp
 							[else (zzcl-ref zst new-zix)]
 							)])
 					 new-zcl
-					#;(cond 
-					 [(equal? dir 'up) 'upstream]
-					 [(equal? dir 'down) 'downstream])
-	  			 ;\/why does (case), not (cond), evoke "duplicate datum" 
-           ;\/warning?
-					#;(case dir
-					 ['up 'upstream]
-					 ['down 'downstream])
-	))
+					 ))
 
 ;;test zzstruct 0-1-2-3-4-5; 2-0-5-4-3-1; 4-3-2; 0-1-2->; 0-5, 1-4-2
 ;;application note: though possible, a zzcell should in practice not exist
