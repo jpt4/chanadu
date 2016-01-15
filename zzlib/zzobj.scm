@@ -82,16 +82,29 @@ zzcell-neighbor-pair, zznp, znp
 				axis)))
 
 ;;rank - a series of locally connected cells in a dimension
-(define (zzst-rank zst zix)
+#;(define (zzst-rank zst zix ax)
 	(zzcl-ref zzst (min (zzst-rank-dir zst zix 'up) (zzst-rank-dir zst zix 'down)
+)))
 
-(define (zzcl-rank-sort zcla zclb ax)
-	(cond
-	 [
+;;head zzcell of a rank, the most upstream
+;;in the case of a ringrank, the lowest index zzcell is chosen, tagged as such
+#|
+A ringrank may have a headcell; ideally, this is the cell most
+desirable to jump to quickly. It may be chosen by the user or by some
+algorithmic method.
+|#
+(define (zzst-rank-head zst zix ax)
+	(let ([zcl (zzcl-ref zst zix)]
+				[up (upstream (zznp-at-axis zcl zx))])
+		(cond
+		 [(equal? up '_) zcl]
+		 [(equal? up zix) (zzcl-ref zst (min (map zzix (zzst-rank zst zix ax))))]
+		 )))
+		
 
-;;all zzcell-content present on a given axis
-(define (global-zzco-on-axis zst ax)
-	'global-zzco-along-axis)
+;;all ranks present in a dimension
+(define (zzst-global-rank zst dim)
+	'zzst-global-rank)
 
 ;;nearest neighbor zzcells
 (define (zzcl-neighbors-on-axis zst zix ax)
